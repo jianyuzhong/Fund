@@ -1,0 +1,17 @@
+Model:IFund
+ID
+Code 股票代码
+Type 基金类型
+Name 基金名称
+Total 总价值
+Price 单价
+Amount 份额
+PublishTime 发行日期
+Conpany 基金公司
+
+基金经理：IManager
+Name:  基金名+姓名做唯一ID
+WorkTime: 工作累计时间
+Conpany 基金公司
+Info
+
