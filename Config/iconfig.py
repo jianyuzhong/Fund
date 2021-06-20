@@ -1,16 +1,13 @@
+from Comm.Model.DataModel import WebSite
 from Comm.DB.idb import DBHelper
 db_conf = {
             'user' : 'root',
-            'passwd' : 'a.123456',
-            'host' : '192.168.90.225',
+            'passwd' : 'xingfu9635',
+            'host' : 'localhost',
             'schema' : 'IDataBase',
             'charset' : 'utf8mb4'
         }
 idatabase=DBHelper(**db_conf)
-
 FundWebSite=[
-{
-    "name"
-}
-
+  WebSite(name='天天基金',url='https://fund.eastmoney.com/')
 ]

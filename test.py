@@ -1,4 +1,12 @@
-from Config.iconfig import idatabase
+from Config.iconfig import idatabase,FundWebSite
+from Comm.Model.DataModel import WebSite
+from Bussiness.Spider import FundSpider
+
 if __name__=='__main__':
-    i=idatabase.get_dicts(" select *from demo ",convert=False)
-    a=1
+    for item in FundWebSite:
+        if isinstance(item,WebSite):
+            spider=FundSpider(WebSite)
+            spider.start()
+    # a=HttpAccess(0,'',)
+    # i=idatabase.get_dicts(" select *from test ",convert=False)
+    # a=1
