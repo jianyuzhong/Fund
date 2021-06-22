@@ -24,5 +24,7 @@ class IFund():
     d_flow=None,
     w_flow=None,
     m_flow=None,
+    date=None
+    available=None
     def __init__(self,) -> None:
         pass
