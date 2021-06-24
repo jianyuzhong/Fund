@@ -28,3 +28,12 @@ class IFund():
     available=None
     def __init__(self,) -> None:
         pass
+class Position():
+    code=None
+    name=None
+    price=None
+    flow=None
+    url=None
+    propotion=None
+    t_amount=None
+    t_value=None
