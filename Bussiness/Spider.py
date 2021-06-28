@@ -1,11 +1,15 @@
-from commonbaby.httpaccess.httpaccess import HttpAccess
+from commonbaby.httpaccess import HttpAccess
 from Comm.Model.DataModel import WebSite
-import requests,demjson,datetime,time,threading
-from Comm.Model.DataModel import IFund
+import requests,demjson,threading,pytz
+from Comm.Model.DataModel import IFund,Position
 from commonbaby.httpaccess import ResponseIO
-from commonbaby.helpers import helper_str
 from bs4 import BeautifulSoup
+from commonbaby.helpers import helper_str
 import bs4
+import calendar
+import time
+from datetime import datetime
+from Config.iconfig import idatabase
 
 class FundSpider():
     def __init__(self,iwebste:WebSite) -> None:
@@ -13,38 +17,91 @@ class FundSpider():
     def get_Manager(self,s_data:IFund):
         pass
     def get_detail(self,s_data:IFund):
-        url=f"http://fundf10.eastmoney.com/ccmx_{s_data.code}.html"
+        url=f"http://fundf10.eastmoney.com/jbgk_{s_data.code}.html"
         headers = {
   'Host':'fundf10.eastmoney.com',
   'Proxy-Connection': 'keep-alive',
   'Cache-Control':'max-age=0',
-  'Upgrade-Insecure-Requests':'1',
   'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
   'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
-  'Referer':'http://fund.eastmoney.com/005296.html',
   'Accept-Encoding': 'gzip,deflate',
   'Accept-Language': 'zh-CN,zh;q=0.9'
 }
         ha=HttpAccess(0,)
         res=ha.get(url=url,headers=headers)
         i_soup=BeautifulSoup(res.text,'lxml')
-        base_info=i_soup.select('[class="bs_gl"] p label')
-        if isinstance(base_info[0],bs4.element.Tag):
-            s_data.publishtime= base_info[0].select_one('span').get_text()
+        base_info=i_soup.select('[class="txt_cont"] table tr')
+        s_data.url=url
         if isinstance(base_info[2],bs4.element.Tag):
-            s_data.publishtime= base_info[2].select_one('span').get_text()
-        if isinstance(base_info[3],bs4.element.Tag):
-            s_data.company= base_info[3].select_one('a').get_text()
-        s_date=base_info[0]
-        for xx in base_info:
+            publishtime= base_info[2].select_one('td').get_text()
+            s_data.publishtime=str(publishtime).replace('年','-').replace('月','-').replace('日','')
+        if isinstance(base_info[1],bs4.element.Tag):
+            s_data.type= base_info[1].select('td')[1].get_text()
+        if isinstance(base_info[4],bs4.element.Tag):
+            s_data.company= base_info[4].select('td')[0].get_text()
+        if isinstance(base_info[5],bs4.element.Tag):
+            s_data.manager= base_info[5].select('td')[0].get_text()
+        s_total=str(base_info[3].select('td')[0].get_text())
+        s_amount=str(base_info[3].select('td')[1].get_text())
+        s_data.total=float(helper_str.substring(s_total,'','亿'))*100000000
+        s_data.amoumt=float(helper_str.substring(s_amount,'','亿'))*100000000
+        idatabase.execute('')
+        headers={  'Host': 'fundf10.eastmoney.com',
+  'Connection': 'keep-alive',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36',
+  'Accept': '*/*',
+  'Referer': 'http://fundf10.eastmoney.com/ccmx_005296.html',
+  'Accept-Encoding': 'gzip, deflate',
+  'Accept-Language': 'zh-CN,zh;q=0.9',}
+        url=f"http://fundf10.eastmoney.com/FundArchivesDatas.aspx?type=jjcc&code={s_data.code}&topline=10&year=&month="
+        res=ha.get(url=url,headers=headers)
+        t=res.text
+        f_len=len('var apidata=')
+        t_json=t[f_len:]
+        t_json=t_json[:-1]
+        json_data=demjson.decode(t_json)
+        t_html=BeautifulSoup(json_data["content"],'lxml')
+        h_tr=t_html.select('table tbody tr')
+        ts = calendar.timegm(time.gmtime())
+        secids= t_html.select_one('[class="hide"]').get_text()
+        jjcc_items=[]
+        for xx in h_tr:
             if isinstance(xx,bs4.element.Tag):
-                print(xx.text)
-                
-            
-            
-        a=0
-       
-    
+                j_tr=xx.find_all('td')
+                j_item=Position()
+                j_item.f_code=s_data.code
+                j_item.name=j_tr[2].get_text()
+                j_item.code=j_tr[1].get_text()
+                j_item.propotion=j_tr[6].get_text()
+                j_item.t_amount=j_tr[7].get_text()
+                j_item.t_value=j_tr[8].get_text() 
+                j_item.url=j_tr[2].find('a').attrs["href"]
+                j_item.date=datetime.now(pytz.timezone('Asia/Shanghai')).strftime('%Y-%m-%d %H:%M:%S')
+                jjcc_items.append(j_item) 
+        j_url=f"https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2&invt=2&fields=f2,f3,f4,f5,f8,f9,f10,f11&secids={secids}"  
+        headers={  'Host': 'push2.eastmoney.com',
+  'Connection': 'keep-alive',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.106 Safari/537.36',
+  'Accept': '*/*',
+  'Referer': 'http://fundf10.eastmoney.com/',
+  'Accept-Encoding': 'gzip, deflate',
+  'Accept-Language': 'zh-CN,zh;q=0.9',}
+  
+        j_res=ha.get(url=j_url,headers=headers)
+        d_json=demjson.decode(j_res.text)
+        i_count=0
+        for d_item in d_json["data"]["diff"]:
+            jjcc_items[i_count].price=d_item["f2"]
+            jjcc_items[i_count].flow=d_item["f3"]
+            jjcc_items[i_count].flow_amount=d_item["f4"]
+            jjcc_items[i_count].deal=d_item["f5"]
+            jjcc_items[i_count].change=d_item["f8"]
+            jjcc_items[i_count].PEG_ratio=d_item["f9"]
+            jjcc_items[i_count].ratio_rate=d_item["f10"]
+            jjcc_items[i_count].draw=d_item["f11"]
+            i_count+=1
+        a=1
+
 
         pass     
     def start(self):

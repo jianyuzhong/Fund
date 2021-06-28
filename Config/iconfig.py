@@ -5,7 +5,7 @@ db_conf = {
             'passwd' : 'xingfu9635',
             'host' : 'localhost',
             'schema' : 'IDataBase',
-            'charset' : 'utf8mb4'
+            'charset' : 'utf8'
         }
 idatabase=DBHelper(**db_conf)
 FundWebSite=[

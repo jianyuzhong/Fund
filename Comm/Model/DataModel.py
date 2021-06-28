@@ -26,14 +26,25 @@ class IFund():
     m_flow=None,
     date=None
     available=None
+    manager=None
+    url=None
+
     def __init__(self,) -> None:
         pass
 class Position():
+    f_code=None
     code=None
     name=None
     price=None
     flow=None
+    flow_amount=None
+    deal=None
+    change=None
+    PEG_ratio=None
+    ratio_rate=None
+    draw=None
     url=None
     propotion=None
     t_amount=None
     t_value=None
+    date=None
