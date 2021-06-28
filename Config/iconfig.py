@@ -1,5 +1,11 @@
-from Comm.Model.DataModel import WebSite
+from Bussiness.Spider import T_FundSpider
 from Comm.DB.idb import DBHelper
+
+from commonbaby.mslog import MsFileLogConfig,MsLogLevels,MsLogManager, msloglevel, mslogmanager
+MsLogManager.static_initial(
+    dft_lvl=MsLogLevels.INFO,msficfg=MsFileLogConfig(fi_dir=r"./_log")
+)
+logger=MsLogManager.get_logger("fund_spider")
 db_conf = {
             'user' : 'root',
             'passwd' : 'xingfu9635',
@@ -7,7 +13,6 @@ db_conf = {
             'schema' : 'IDataBase',
             'charset' : 'utf8'
         }
-idatabase=DBHelper(**db_conf)
-FundWebSite=[
-  WebSite(name='天天基金',url='https://fund.eastmoney.com/')
-]
+
+FundWebSite=[T_FundSpider(name='天天基金',url='https://fund.eastmoney.com/',db_conf=db_conf,enable=True,logger=logger)]
+
