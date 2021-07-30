@@ -6,7 +6,14 @@ import queue
 MsLogManager.static_initial(
     dft_lvl=MsLogLevels.INFO,msficfg=MsFileLogConfig(fi_dir=r"./_log")
 )
-logger=MsLogManager.get_logger("fund_spider")
+idb_conf = {
+            'user' : 'root',
+            'passwd' : 'xingfu9635',
+            'host' : 'localhost',
+            'schema' : 'IDataBase',
+            'charset' : 'utf8'
+        }
+logger=MsLogManager.get_logger("IFund")
 
 class IFund():
     code=None
@@ -22,10 +29,18 @@ class IFund():
     d_flow=0
     w_flow=0
     m_flow=0
-    date=None
+    date='1949-10-01'
     available=1
-    manager=None
+    manager=None    
     url=None
+    ipoint=None
+    variance=None
+    w_avg=None
+    m_avg=None
+    lowlevel=0
+    cguess=0.0
+    score=0.0
+    min_price_day=0
     lock = threading.Lock()
 
     def __init__(self) -> None:
@@ -45,31 +60,31 @@ class Position():
     f_code=None
     code=None
     name=None
-    price=None
-    flow=None
-    flow_amount=None
-    deal=None
-    change=None
-    PEG_ratio=None
-    ratio_rate=None
-    draw=None
+    price=0
+    flow=0
+    flow_amount=0
+    deal=0
+    change=0
+    PEG_ratio=0
+    ratio_rate=0
+    draw=0
     url=None
-    propotion=None
-    t_amount=None
-    t_value=None
+    propotion=0
+    t_amount=0
+    t_value=0
     date=None
     lock = threading.Lock()
     def Insert(self,helper:DBHelper):
-        self.lock.acquire()
         try:
-            sql='insert into position (Code,Name,Price,Flow,FlowAmount,Deal,Change,PEGRatio,RatioRate,Draw,Url,Propotion,TAmount,TValue,Date)'
-            sql+=f" values('{self.code}','{self.name}',{self.price},{self.flow},{self.flow_amount},{self.deal},{self.change},{self.PEG_ratio}',{self.ratio_rate},{self.draw},'{self.url}',{self.propotion},{self.t_amount},{self.t_value},'{self.date}')"
-            helper.execute(sql)
+            con=DBHelper(**idb_conf)
+            sql='insert into position (FCode,`Code`,`Name`,Price,Flow,FlowAmount,Deal,`Change`,PEGRatio,RatioRate,Draw,Url,Propotion,TAmount,TValue,`Date`)'
+            sql+=f" values('{self.f_code}','{self.code}','{self.name}',{self.price},{self.flow},{self.flow_amount},{self.deal},{self.change},{self.PEG_ratio},{self.ratio_rate},{self.draw},'{self.url}',{self.propotion},{self.t_amount},{self.t_value},now())"
+            con.execute(sql)
             logger.info(f"code:{self.code}, name:{self.name}")
         except Exception as ex:
             logger.error(f"insert into data error with messages {str(ex)} ")
         finally:
-            self.lock.release()
+            pass
 
 class FundSpider():
     def __init__(self,name:str,url:str,db_conf:object,logger:MsLogger,enable:bool=False,maxthread:int=5) -> None:
@@ -79,6 +94,7 @@ class FundSpider():
         self._idatabase=DBHelper(**db_conf)
         self._p_idatabase=DBHelper(**db_conf)
         self._logger=logger
+        self._db_conf=db_conf
         self._queque=Queue(maxthread)
     def start():
         pass
