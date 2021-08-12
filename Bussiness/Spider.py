@@ -273,8 +273,8 @@ class T_FundSpider(FundSpider):
             # avg_price=f_total_price/len(l_data)       
             mm=self.get_compare_point(history_data=history_data,avg=avg)
             if not mm[0]:return
-            min_price_120=self.get_min_price(s_data.code,120)
-            # if min_price >min_price_120+0.05 :return
+            min_price_120=self.get_min_price(s_data.code,150)
+            if min_price >min_price_120 :return
             s_data.variance=np.var(history_data)
             s_data.ipoint=mm[1]
             s_data.lowlevel=mm[2]
