@@ -1,5 +1,8 @@
+from cgitb import reset
+from contextlib import nullcontext
 from logging import Logger
 import re
+from unittest import result
 from commonbaby.httpaccess import HttpAccess
 from pymysql import connect
 import requests,demjson,threading,pytz
@@ -583,3 +586,76 @@ class T_FundSpider(FundSpider):
                 self._logger.error(f'url{url} json error {res}')
             time.sleep(3)
             c_num+=1
+    def StartCount(self):
+        url=f"http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=6yzf&st=desc&sd={time.strftime('%Y-%m-%d', time.localtime())}&ed={time.strftime('%Y-%m-%d', time.localtime())}&qdii=&tabSubtype=,,,,,&pi=1&pn=50&dx=1"
+        payload={}
+        headers = {
+  'Host': 'fund.eastmoney.com',
+  'Proxy-Connection': 'keep-alive',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
+  'Accept': '*/*',
+  'Referer': 'http://fund.eastmoney.com/data/fundranking.html',
+  'Accept-Encoding': 'gzip, deflate',
+  'Accept-Language': 'zh-CN,zh;q=0.9'
+}
+    #    response = requests.request("GET", url, headers=headers, data=payload)
+        ha=HttpAccess(0,)
+        response=ha.get(url=url,headers=headers)
+        res=response.text
+        front_len=len('var rankData =')
+        res=res[front_len:]
+        res=res[:-1]
+        json_data=demjson.decode(res)   
+        c_num=1
+        max_page=json_data["allPages"]
+        result=[]
+        while c_num<=max_page:
+            url=f"http://fund.eastmoney.com/data/rankhandler.aspx?op=ph&dt=kf&ft=all&rs=&gs=0&sc=6yzf&st=desc&sd={time.strftime('%Y-%m-%d', time.localtime())}&ed={time.strftime('%Y-%m-%d', time.localtime())}&qdii=&tabSubtype=,,,,,&pi={c_num}&pn=50&dx=1"
+            response=ha.get(url=url,headers=headers)
+            res=response.text
+            front_len=len('var rankData =')
+            res=res[front_len:] 
+            res=res[:-1]
+            try:
+                json_data=demjson.decode(res)   
+                for item in json_data["datas"]:
+                    try:
+                        sResult=self.CountTest(item)
+                        if(sResult!= None):
+                            result.append(sResult)
+                    except Exception as ex:
+                        self._logger.error(f"get s_data error with messages{str(item)} {str(ex)}")
+            except Exception as ex:
+                self._logger.error(f'url{url} json error {res}')
+                
+            self._logger.info(f'\n\nprogress {c_num}/{max_page}\n\n')
+            c_num+=1
+            time.sleep(1)
+        self._logger.info(demjson.encode(result))
+    def CountTest(self,dataStr:str):
+        data= dataStr.split(',')
+        result=None
+        allgt0=True
+        # if [i for i in data[9:14] if float(i)<0]:
+        #     allgt0=False
+        alllt0=True
+        if [i for i in data[7:8] if float(i)>0]:
+            alllt0=False
+
+        if allgt0 and alllt0 and int(float(data[6]))>0:
+            result.Name=data[1]
+            result.Code=data[0]
+        return result
+    def get_compare(self,s_data:IFund,c_day:int=30):
+        try:
+            # s_data.code="000390"
+            headers = {
+  'Host': 'api.fund.eastmoney.com',
+  'Connection': 'keep-alive',
+  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
+  'Accept': '*/*',
+  'Referer': f'http://fundf10.eastmoney.com/jjjz_{s_data.code}.html',
+  'Accept-Encoding': 'gzip, deflate',
+  'Accept-Language': 'zh-CN,zh;q=0.9'
+}
+            url=f"http://api.fund.eastmoney.com/f10/lsjz?fundCode={s_data.code}&pageIndex=1&pageSize={c_day}&startDate=&endDate="

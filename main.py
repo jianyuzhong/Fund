@@ -19,7 +19,7 @@ if __name__=='__main__':
                 continue
             logger.info(f'Spider {item._name} start')
             
-            item.start()
+            item.StartCount()
         
     # logger.info('spider fund compeleted ...')
     # i=idatabase.get_dicts(" select *from test ",convert=False)
